@@ -20,13 +20,15 @@
 package org.sonar.java.checks.helpers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.sonar.java.regex.RegexCheck;
+import org.sonar.java.regex.ast.AutomatonState;
 import org.sonar.java.regex.ast.CharacterTree;
 import org.sonar.java.regex.ast.RegexSyntaxElement;
-import org.sonar.java.regex.ast.RegexTree;
 
 public class RegexTreeHelper {
 
@@ -71,6 +73,36 @@ public class RegexTreeHelper {
   private static void addCurrentGrapheme(List<RegexCheck.RegexIssueLocation> result, @Nullable RegexSyntaxElement start, @Nullable RegexSyntaxElement end) {
     if (start != null && end != null) {
       result.add(new RegexCheck.RegexIssueLocation(start, end, ""));
+    }
+  }
+
+  public static boolean canReachWithoutConsumingInput(AutomatonState start, AutomatonState goal) {
+    return canReachWithoutConsumingInput(start, goal, new HashSet<>());
+  }
+
+  private static boolean canReachWithoutConsumingInput(AutomatonState start, AutomatonState goal, Set<AutomatonState> visited) {
+    if (start == goal) {
+      return true;
+    }
+    if (visited.contains(start)) {
+      return false;
+    }
+    visited.add(start);
+    for (AutomatonState successor : start.successors()) {
+      if (hasEmptyEdge(successor) && canReachWithoutConsumingInput(successor, goal, visited)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean hasEmptyEdge(AutomatonState state) {
+    switch (state.incomingTransitionType()) {
+      case EPSILON:
+      case LOOKAROUND_BACKTRACKING:
+        return true;
+      default:
+        return false;
     }
   }
 
