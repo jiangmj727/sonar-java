@@ -542,6 +542,14 @@ class InternalCheckVerifierTest {
         .withChecks(FILE_LINE_ISSUE_CHECK)
         .verifyIssues();
     }
+
+    @Test
+    void order_of_expected_issue_should_not_be_relavant() {
+      InternalCheckVerifier.newInstance()
+        .onFile("src/test/files/testing/MultipleIssuesSameLine.java")
+        .withChecks(new MultipleIssuePerLineCheck())
+        .verifyIssues();
+    }
   }
 
   @Rule(key = "FailingCheck")
@@ -585,6 +593,18 @@ class InternalCheckVerifierTest {
     @Override
     public void scanFile(JavaFileScannerContext context) {
       context.addIssueOnProject(this, "issueOnProject");
+    }
+  }
+
+  @Rule(key = "MultipleIssuePerLineCheck")
+  class MultipleIssuePerLineCheck implements JavaFileScanner {
+    @Override
+    public void scanFile(JavaFileScannerContext context) {
+      context.addIssue(4, this, "msg 2");
+      context.addIssue(4, this, "msg 1");
+
+      context.addIssue(7, this, "msg 1");
+      context.addIssue(7, this, "msg 2");
     }
   }
 }
